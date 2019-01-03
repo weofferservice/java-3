@@ -9,7 +9,7 @@ public class MainMatrix {
 
     private static final ExecutorService executor = Executors.newFixedThreadPool(THREAD_NUMBER);
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         final int[][] matrixA = MatrixUtil.create(MATRIX_SIZE);
         final int[][] matrixB = MatrixUtil.create(MATRIX_SIZE);
 

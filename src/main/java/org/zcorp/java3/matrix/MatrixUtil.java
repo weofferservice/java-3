@@ -1,6 +1,8 @@
 package org.zcorp.java3.matrix;
 
 import java.util.Random;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 
 public class MatrixUtil {
@@ -15,21 +17,34 @@ public class MatrixUtil {
      * @param executor is {@code ExecutorService} to submit tasks
      * @return {@code matrixC} is a multiplication {@code matrixA} and {@code matrixB}
      */
-    public static int[][] concurrentMultiply(int[][] matrixA, int[][] matrixB, ExecutorService executor) {
+    public static int[][] concurrentMultiply(int[][] matrixA, int[][] matrixB, ExecutorService executor) throws InterruptedException {
         final int matrixSize = matrixA.length;
         final int[][] matrixC = new int[matrixSize][matrixSize];
 
-        // TODO implement parallel multiplication matrixA * matrixB
-        // Пока добавил неоптимизированную однопоточную реализацию,
-        // чтобы в методе main удачно проходило сравнение матриц
-        for (int i = 0; i < matrixSize; i++) {
-            for (int j = 0; j < matrixSize; j++) {
-                int sum = 0;
-                for (int k = 0; k < matrixSize; k++) {
-                    sum += matrixA[i][k] * matrixB[k][j];
-                }
-                matrixC[i][j] = sum;
+        CompletionService<Void> completionService = new ExecutorCompletionService<>(executor);
+
+        for (int j = 0; j < matrixSize; j++) {
+            final int columnNumber = j;
+            final int columnB[] = new int[matrixSize];
+            for (int k = 0; k < matrixSize; k++) {
+                columnB[k] = matrixB[k][j];
             }
+
+            completionService.submit(() -> {
+                for (int i = 0; i < matrixSize; i++) {
+                    int rowA[] = matrixA[i];
+                    int sum = 0;
+                    for (int k = 0; k < matrixSize; k++) {
+                        sum += rowA[k] * columnB[k];
+                    }
+                    matrixC[i][columnNumber] = sum;
+                }
+                return null;
+            });
+        }
+
+        for (int x = 0; x < matrixSize; x++) {
+            completionService.take();
         }
 
         return matrixC;
