@@ -248,7 +248,44 @@ public class MatrixUtil {
     }
 
     /**
-     * Single threaded multiplication of two matrices
+     * Multithreading multiplication (variant 6) of two matrices
+     * Assumption:
+     * {@code matrixA} and {@code matrixB} are square matrices and their sizes are equal
+     *
+     * @param matrixA  is first matrix
+     * @param matrixB  is second matrix
+     * @param executor is {@code ExecutorService} to submit tasks
+     * @return {@code matrixC} is a multiplication {@code matrixA} and {@code matrixB}
+     */
+    public static int[][] concurrentMultiply6(int[][] matrixA, int[][] matrixB, ExecutorService executor) throws InterruptedException {
+        final int matrixSize = matrixA.length;
+        final int[][] matrixC = new int[matrixSize][matrixSize];
+
+        final CountDownLatch latch = new CountDownLatch(matrixSize);
+
+        for (int row = 0; row < matrixSize; row++) {
+            int rowA[] = matrixA[row];
+            int rowC[] = matrixC[row];
+
+            executor.submit(() -> {
+                for (int i = 0; i < matrixSize; i++) {
+                    int elementA = rowA[i];
+                    int rowB[] = matrixB[i];
+                    for (int column = 0; column < matrixSize; column++) {
+                        rowC[column] += elementA * rowB[column];
+                    }
+                }
+                latch.countDown();
+            });
+        }
+
+        latch.await();
+
+        return matrixC;
+    }
+
+    /**
+     * Multithreading multiplication (variant 7) of two matrices
      * Assumption:
      * {@code matrixA} and {@code matrixB} are square matrices and their sizes are equal
      *
@@ -256,7 +293,38 @@ public class MatrixUtil {
      * @param matrixB is second matrix
      * @return {@code matrixC} is a multiplication {@code matrixA} and {@code matrixB}
      */
-    public static int[][] singleThreadMultiply(int[][] matrixA, int[][] matrixB) {
+    public static int[][] concurrentMultiply7(int[][] matrixA, int[][] matrixB) {
+        final int matrixSize = matrixA.length;
+        final int[][] matrixC = new int[matrixSize][matrixSize];
+
+        IntStream.range(0, matrixSize)
+                .parallel()
+                .forEach(row -> {
+                    int rowA[] = matrixA[row];
+                    int rowC[] = matrixC[row];
+
+                    for (int i = 0; i < matrixSize; i++) {
+                        int elementA = rowA[i];
+                        int rowB[] = matrixB[i];
+                        for (int column = 0; column < matrixSize; column++) {
+                            rowC[column] += elementA * rowB[column];
+                        }
+                    }
+                });
+
+        return matrixC;
+    }
+
+    /**
+     * Single threaded multiplication (variant 1) of two matrices
+     * Assumption:
+     * {@code matrixA} and {@code matrixB} are square matrices and their sizes are equal
+     *
+     * @param matrixA is first matrix
+     * @param matrixB is second matrix
+     * @return {@code matrixC} is a multiplication {@code matrixA} and {@code matrixB}
+     */
+    public static int[][] singleThreadMultiply1(int[][] matrixA, int[][] matrixB) {
         final int matrixSize = matrixA.length;
         final int[][] matrixC = new int[matrixSize][matrixSize];
 
@@ -273,6 +341,35 @@ public class MatrixUtil {
                     sum += rowA[k] * columnB[k];
                 }
                 matrixC[row][column] = sum;
+            }
+        }
+
+        return matrixC;
+    }
+
+    /**
+     * Single threaded multiplication (variant 2) of two matrices
+     * Assumption:
+     * {@code matrixA} and {@code matrixB} are square matrices and their sizes are equal
+     *
+     * @param matrixA is first matrix
+     * @param matrixB is second matrix
+     * @return {@code matrixC} is a multiplication {@code matrixA} and {@code matrixB}
+     */
+    public static int[][] singleThreadMultiply2(int[][] matrixA, int[][] matrixB) {
+        final int matrixSize = matrixA.length;
+        final int[][] matrixC = new int[matrixSize][matrixSize];
+
+        for (int row = 0; row < matrixSize; row++) {
+            int rowA[] = matrixA[row];
+            int rowC[] = matrixC[row];
+
+            for (int i = 0; i < matrixSize; i++) {
+                int elementA = rowA[i];
+                int rowB[] = matrixB[i];
+                for (int column = 0; column < matrixSize; column++) {
+                    rowC[column] += elementA * rowB[column];
+                }
             }
         }
 
