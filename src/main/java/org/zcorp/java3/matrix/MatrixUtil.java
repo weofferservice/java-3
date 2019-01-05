@@ -293,24 +293,29 @@ public class MatrixUtil {
      * @param matrixB is second matrix
      * @return {@code matrixC} is a multiplication {@code matrixA} and {@code matrixB}
      */
-    public static int[][] concurrentMultiply7(int[][] matrixA, int[][] matrixB) {
+    public static int[][] concurrentMultiply7(int[][] matrixA, int[][] matrixB) throws ExecutionException, InterruptedException {
         final int matrixSize = matrixA.length;
         final int[][] matrixC = new int[matrixSize][matrixSize];
 
-        IntStream.range(0, matrixSize)
-                .parallel()
-                .forEach(row -> {
-                    int rowA[] = matrixA[row];
-                    int rowC[] = matrixC[row];
+        int threadsCount = Runtime.getRuntime().availableProcessors() - 1;
+        ExecutorService executor = new ForkJoinPool(threadsCount);
 
-                    for (int i = 0; i < matrixSize; i++) {
-                        int elementA = rowA[i];
-                        int rowB[] = matrixB[i];
-                        for (int column = 0; column < matrixSize; column++) {
-                            rowC[column] += elementA * rowB[column];
-                        }
-                    }
-                });
+        executor.submit(
+                () -> IntStream.range(0, matrixSize)
+                        .parallel()
+                        .forEach(row -> {
+                            int rowA[] = matrixA[row];
+                            int rowC[] = matrixC[row];
+
+                            for (int i = 0; i < matrixSize; i++) {
+                                int elementA = rowA[i];
+                                int rowB[] = matrixB[i];
+                                for (int column = 0; column < matrixSize; column++) {
+                                    rowC[column] += elementA * rowB[column];
+                                }
+                            }
+                        }))
+                .get();
 
         return matrixC;
     }
